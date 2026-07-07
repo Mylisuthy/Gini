@@ -1,12 +1,12 @@
-# Sistema Multi-Agente Corporativo: Manual de Usuario V5.1
+# Sistema Multi-Agente Corporativo: Manual de Usuario V8.0
 
-¡Bienvenido al ecosistema **Gini V5.1**! Esta plataforma es un Hub de Inteligencia Artificial open-source y auto-instalable, diseñado para orquestar un equipo de agentes virtuales (Swarm AI) que pueden programar, gestionar y ejecutar comandos en tu entorno local.
+¡Bienvenido al ecosistema **Gini V8.0**! Esta plataforma es un Hub de Inteligencia Artificial open-source y auto-instalable, diseñado para orquestar un equipo de agentes virtuales (Swarm AI) que pueden programar, gestionar y auto-evolucionar en tu entorno local mediante un flujo de trabajo paralelo.
 
 ---
 
 ## 1. Inicio Rápido y Configuración
 
-El ecosistema es *Zero-Code*, lo que significa que no necesitas modificar código Python para configurarlo o escalarlo.
+El ecosistema es *Zero-Code* en su núcleo, lo que significa que no necesitas modificar código Python para configurarlo o escalarlo, los agentes de IA lo hacen por ti.
 
 1. **Abrir la Plataforma:** Ejecuta `start.bat`. Se abrirá la interfaz gráfica de escritorio.
 2. **Cargar Credenciales Seguras:**
@@ -17,40 +17,32 @@ El ecosistema es *Zero-Code*, lo que significa que no necesitas modificar códig
 
 ---
 
-## 2. El Chat Central (Operaciones)
+## 2. El Chat Central (Operaciones Paralelas)
 
-En esta pestaña interactúas con **Gini (🧠)**, la Router Principal.
-Gini no hace el trabajo pesado, ella *enruta*.
+En esta pestaña interactúas con **Gini (🧠)**, la Lead Architect.
 
-- **Comportamiento:** Si le preguntas "¿Cómo estás?", ella responderá directamente. Si le pides "Necesito que crees una API con FastAPI", Gini invocará silenciosamente a un especialista (por ejemplo, a Tobi o a Cami) y te traerá su plan de acción.
-- **Acciones y Human-In-The-Loop:**
-  - Los agentes nunca ejecutan código sin tu permiso.
-  - Cuando un agente propone una solución, verás una caja de cristal ("Acción") con el código, los archivos a modificar, o los **Comandos de Terminal** a ejecutar.
+- **Comportamiento Asincrónico:** Si le pides construir un proyecto entero, Gini no lo hará sola. Ella emitirá múltiples órdenes y enrutará en *paralelo* a los especialistas (Fani, Cami, Mani). Verás múltiples tarjetas cargando simultáneamente.
+- **Auto-Reflexión (QA Interno):** Cuando los agentes terminan, verás un bloque amarillo en sus tarjetas. Esto es su *Cadena de Pensamiento*. El sistema les obliga a criticar su propio código y corregir fallos antes de entregártelo.
+- **Acciones (Human-In-The-Loop):**
   - Tienes dos botones: **[Aprobar y Ejecutar]** o **[Rechazar]**.
-  - Si apruebas, la aplicación se bloquea brevemente (mostrando un círculo de carga) para evitar envíos dobles, mientras el "Motor Universal" crea los archivos físicamente en `src/workspace/` y/o ejecuta los comandos de terminal en tu PC.
+  - Si apruebas, el "Motor Universal" crea los archivos físicamente con las rutas especificadas y/o ejecuta los comandos de terminal (como correr pruebas o levantar servidores locales).
 
 ---
 
-## 3. El Laboratorio de Evolución (Evo)
+## 3. El Laboratorio de Evolución (Evo Autónomo)
 
-**Evo (🧬)** es tu Arquitecto de Sistemas. Este meta-agente tiene acceso a los "Cerebros" (System Prompts) de los demás agentes.
+**Evo (🧬)** es tu Arquitecto de Sistemas. Opera bajo el nuevo **Protocolo XML 7D**.
 
-### Crear un Agente Nuevo
-Para escalar tu equipo de IA sin escribir código, simplemente habla con Evo:
+### Evolución Desatendida (La Magia de la V8.0)
+Si durante una operación normal en el Chat Central, un agente detecta que no tiene los conocimientos necesarios (Ej. Cami no sabe usar una librería específica de Python), el agente lanzará una alerta `<auto_evolucion>`. 
+Sin que intervengas, **Evo se ejecutará en segundo plano**, modificará el código fuente del agente (`cami_prompt.xml`), inyectará la regla permanente y te avisará que la mutación fue exitosa.
+
+### Crear / Modificar Manualmente
+Para escalar tu equipo de IA, simplemente ve a la pestaña del Laboratorio y habla con Evo:
 - **Tú:** *"Crea un agente llamado Max, experto en C++ y Bases de Datos SQL."*
-- **Evo:** Analizará la arquitectura y te presentará una "Matriz de Personalidad". Si apruebas e inyectas el conocimiento, el agente nace instantáneamente. ¡Gini podrá asignarle tareas en ese mismo momento!
-
-### Probar un Agente
-Para no arruinar el ecosistema con agentes defectuosos, puedes probarlos en Evo antes de usarlos:
-- **Tú:** *"Prueba a Max pidiéndole que cree una tabla en SQL."*
-- **Evo:** Simulará la invocación de Max y te mostrará el output JSON crudo (sin ejecutar nada en tu PC). Así podrás validar si sus Skills están funcionando bien.
-
-### Purgar un Agente
-Si un agente se vuelve obsoleto o defectuoso, elimínalo permanentemente.
-- **Tú:** *"Elimina al agente Max."*
-- Evo te pedirá confirmación con un botón rojo. Al purgarlo, Gini dejará de conocerlo y su personalidad será borrada.
+- **Evo:** Generará la nueva matriz XML y la guardará físicamente. Gini lo detectará al instante para futuras tareas.
 
 ---
 
-## 4. Características Visuales V5.1
-El diseño UI utiliza el estándar **Glassmorphism**, con cajas semitransparentes sobre fondos gradientes oscuros. Durante el procesamiento, observarás barras de carga, bloqueos de inputs y efectos *hover* para garantizar que siempre sepas qué está haciendo el sistema y no generes colisiones de red.
+## 4. Características Visuales V8.0
+El diseño UI utiliza el estándar **Glassmorphism**. Durante el procesamiento de múltiples agentes, el entorno no se congela gracias a la reestructuración en hilos (`threading`), garantizando interacciones fluidas mientras el enjambre procesa gigabytes de contexto.
