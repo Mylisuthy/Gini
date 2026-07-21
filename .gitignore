@@ -18,3 +18,5 @@ __pycache__/
 workspace/
 simulate_v8.py
 *.log
+
+eliminar/

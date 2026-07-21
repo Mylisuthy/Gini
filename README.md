@@ -10,29 +10,32 @@ Bienvenido a **Gini V8.0**, un Hub de Inteligencia Artificial open-source que im
 
 ## 🌟 Características Principales (V8.0)
 
-1. **Orquestación Paralela (Multithreading):** Gini, como Lead Architect, puede dividir un requerimiento complejo (ej. "Construye un backend y un frontend a la vez") y enrutar las tareas a múltiples agentes (Cami y Fani) simultáneamente en hilos separados sin bloquear la interfaz.
-2. **Protocolo de Comunicación XML 7D:** El sistema abandonó las estructuras obsoletas (JSON/Markdown) para pasar a un estándar nativo en XML. Las comunicaciones internas son veloces, estandarizadas y libres de errores de sintaxis.
-3. **Auto-QA (Cadena de Pensamiento):** Cada agente cuenta con un protocolo estricto de auto-crítica (`<reflexion>`). Antes de entregar código, los agentes analizan su solución internamente, aplican reglas de negocio (ej. SOLID, WCAG) y se corrigen a sí mismos.
-4. **Auto-Evolución Desatendida (Evo):** Si un especialista se topa con un muro de conocimiento (ej. una librería nueva), levanta una alerta `<auto_evolucion>`. El Arquitecto (Evo) se inicializa en segundo plano, reprograma la matriz XML del agente fallido inyectando permanentemente el nuevo conocimiento, y lo guarda en disco de forma invisible.
+1. **Orquestación Paralela (Multithreading):** Gini, como Lead Architect, puede dividir un requerimiento complejo (ej. "Construye un backend y un frontend a la vez") y enrutar las tareas a múltiples agentes simultáneamente en hilos separados sin bloquear la interfaz.
+2. **Sistema de Memoria Híbrida y RAG (NUEVO):** Integración nativa con **Qdrant** (VectorDB local) para almacenamiento semántico y un potente **Pipeline de Ingesta Asíncrona** capaz de procesar masivamente PDFs, Word y Texto plano.
+3. **Protocolo de Razonamiento ReAct y Tools (NUEVO):** Los agentes ahora poseen herramientas del mundo real. Durante su razonamiento, pueden pausar su ejecución para buscar en la memoria vectorial (`<buscar_rag>`), hacer consultas directas a la web usando la API de Tavily (`<buscar_web>`), o incluso probar su código Python en un **Sandbox de Docker Efímero** (`<ejecutar_codigo>`) para asegurar máxima calidad antes de la entrega final.
+4. **Protocolo de Comunicación XML 7D:** Las comunicaciones internas son veloces, estandarizadas y libres de errores de sintaxis gracias al enrutamiento vía XML puro.
+5. **Auto-QA y Auto-Evolución (Evo):** Los agentes aplican reglas de negocio internamente (`<reflexion>`). Si detectan un vacío cognitivo, el Meta-Agente (Evo) reprograma permanentemente sus matrices en segundo plano.
 
 ---
 
 ## 🏗️ La Estructura del Equipo (Swarm)
 
-* **🧠 Gini:** Router Principal. Lee tus intenciones, y decide si contestar o *enrutar* el trabajo en paralelo a los demás agentes.
-* **🧬 Evo:** Meta-Agente Arquitecto. Puede leer, crear, modificar y eliminar las matrices de personalidad (archivos XML) de los demás agentes.
+* **🧠 Gini:** Router Principal. Lee tus intenciones, y decide si contestar o *enrutar* el trabajo.
+* **🧬 Evo:** Meta-Agente Arquitecto. Muta el ADN (archivos XML) de los otros agentes en caliente.
 * **🛠️ Especialistas Activos:**
     * **Yimi:** System Analyst / Product Owner.
     * **Fani:** Frontend Developer.
-    * **Cami:** Backend Developer.
-    * **Mani:** QA Automation Engineer.
+    * **Cami:** Backend Developer (Capaz de ejecutar código en Sandbox Seguro).
+    * **Mani:** QA Automation Engineer (Tester riguroso en Docker).
     * **Romi:** DevOps / SecOps Engineer.
     * **Sefi:** Especialista en Bases de Datos.
     * **Tobi:** Fullstack Generalista.
 
 ---
 
-## 🚀 Inicio Rápido
+## 🚀 Inicio Rápido (Arquitectura Zero-Node)
+
+El proyecto está transicionando hacia una experiencia *Open Source Plug & Play*, donde el frontend y backend se levantan con un solo comando en Python, eliminando la dependencia de compiladores de Node.js.
 
 1. **Clonar el repo:**
    ```bash
@@ -43,26 +46,27 @@ Bienvenido a **Gini V8.0**, un Hub de Inteligencia Artificial open-source que im
 2. **Entorno Virtual (Recomendado):**
    ```bash
    python -m venv venv
-   source venv/bin/activate  # En Linux/Mac
    venv\Scripts\activate     # En Windows
    ```
 
 3. **Instalar Dependencias:**
    ```bash
    pip install -r requirements.txt
+   # Nota: Asegúrate de tener Docker instalado en tu máquina si deseas usar las herramientas de Sandbox.
    ```
-   *(Nota: Asegúrate de tener flet, google-genai, cryptography, python-dotenv).*
 
 4. **Ejecutar:**
    ```bash
    start.bat
-   # O directamente: python src/gui/app.py
    ```
 
 ---
 
-## 🔒 Configuración Segura
-Ve a la pestaña superior derecha **"Seguridad"** en la aplicación e ingresa tu `GEMINI_API_KEY`. Tus credenciales se cifran de extremo a extremo usando criptografía asimétrica y se guardan localmente.
+## 🔒 Configuración Segura (Ciberseguridad Zero-Trust)
+Ve a la pestaña de **Seguridad** en la aplicación e ingresa tus credenciales. El sistema requiere:
+- `GEMINI_API_KEY`: Para el motor de LLM.
+- `TAVILY_API_KEY`: Para permitir a los agentes realizar búsquedas web profundas.
+Tus credenciales se cifran de extremo a extremo usando criptografía asimétrica y se guardan localmente.
 
 ---
 
