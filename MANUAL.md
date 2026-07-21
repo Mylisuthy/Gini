@@ -10,11 +10,11 @@ El ecosistema es *Zero-Code* en su núcleo, lo que significa que no necesitas mo
 
 1. **Abrir la Plataforma:** Ejecuta `start.bat`. Se abrirá la interfaz gráfica.
 2. **Cargar Credenciales Seguras:**
-   - Ve a la pestaña de **"Seguridad"**.
-   - Ingresa tu `GEMINI_API_KEY` (Motor lógico principal).
-   - Ingresa tu `TAVILY_API_KEY` (Motor de búsqueda web profesional para agentes).
-   - Haz clic en **Guardar Configuración Cifrada**. 
-   - *Nota de Privacidad:* Tus credenciales se cifran asimétricamente mediante la librería `cryptography` y se almacenan localmente en `.env_secure`. Nunca viajan sin protección.
+   - Dado que la UI de configuración está en desarrollo, debes configurar tus credenciales manualmente.
+   - En la raíz de tu proyecto, edita o crea un archivo llamado `.env`.
+   - Ingresa tu llave principal: `GEMINI_API_KEY="tu-llave"` (Motor lógico principal).
+   - Ingresa tu llave de búsqueda: `TAVILY_API_KEY="tu-llave"` (Motor de búsqueda web profesional para agentes).
+   - *Nota de Privacidad:* Tus credenciales futuras se cifrarán asimétricamente mediante la librería `cryptography` y se almacenarán localmente en `.env_secure`.
 
 ---
 
@@ -26,7 +26,7 @@ En esta pestaña interactúas con **Gini (🧠)**, la Lead Architect.
 - **Ciclo ReAct y Uso de Herramientas (NUEVO):** Los agentes ahora imitan el razonamiento humano. Antes de darte una respuesta final, pueden hacer "pausas" automáticas para:
   - Consultar manuales cargados masivamente en la memoria vectorial (`Qdrant`).
   - Buscar información actualizada en internet usando `Tavily`.
-  - Levantar un **Sandbox Efímero de Docker** para probar el código Python que acaban de escribir y asegurar que funciona antes de mostrártelo.
+  - Levantar un **Sandbox Efímero de Docker** para probar el código Python que acaban de escribir y asegurar que funciona antes de mostrártelo. *(Nota: Requiere Docker Desktop instalado y corriendo en tu máquina con WSL2 habilitado)*.
 - **Auto-Reflexión (QA Interno):** Cuando los agentes terminan, verás un bloque amarillo en sus tarjetas (`<reflexion>`). El sistema les obliga a criticar su propio código y corregir fallos antes de entregártelo.
 - **Acciones (Human-In-The-Loop):** Tienes dos botones: **[Aprobar y Ejecutar]** o **[Rechazar]**.
 

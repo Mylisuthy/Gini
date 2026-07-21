@@ -60,13 +60,15 @@ El proyecto está transicionando hacia una experiencia *Open Source Plug & Play*
    start.bat
    ```
 
+*(Nota vital: Gini V8.0 requiere tener Docker Desktop instalado y corriendo con WSL2 en Windows si deseas que los agentes puedan ejecutar código en el Sandbox de seguridad).*
+
 ---
 
 ## 🔒 Configuración Segura (Ciberseguridad Zero-Trust)
-Ve a la pestaña de **Seguridad** en la aplicación e ingresa tus credenciales. El sistema requiere:
-- `GEMINI_API_KEY`: Para el motor de LLM.
-- `TAVILY_API_KEY`: Para permitir a los agentes realizar búsquedas web profundas.
-Tus credenciales se cifran de extremo a extremo usando criptografía asimétrica y se guardan localmente.
+Actualmente, debido a la transición a la interfaz Zero-Node, debes configurar manualmente tus llaves en un archivo `.env` en la raíz del proyecto.
+- `GEMINI_API_KEY="tu_llave"`: Para el motor de LLM.
+- `TAVILY_API_KEY="tu_llave"`: Para permitir a los agentes realizar búsquedas web profundas.
+Las futuras configuraciones se cifrarán de extremo a extremo usando criptografía asimétrica y se guardarán localmente en `.env_secure`.
 
 ---
 

@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gini V8.0 - Swarm AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://esm.sh/react@18.2.0",
+          "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+          "lucide-react": "https://esm.sh/lucide-react@0.263.1"
+        }
+      }
+    </script>
+</head>
+<body class="bg-[#0B0F19] text-slate-300 font-sans m-0 overflow-hidden">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+          MessageSquare, Settings, Users, Activity, Plus, Hash, Send, 
+          TerminalSquare, CheckCircle2, Clock, 
+          ShieldAlert, Beaker, Terminal, Code2, Database, Layout, 
+          TestTube2, GitMerge, AlertTriangle, Check, X, Copy, PlayCircle,
+          Loader2, Cpu, CheckSquare
+        } from 'lucide-react';
+        
+        const SWARM_AGENTS = [
+          { id: 'gini', name: 'Gini', role: 'Router Principal', color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10', icon: GitMerge },
+          { id: 'evo', name: 'Evo', role: 'Arqui. Mutación', color: 'text-orange-500', bg: 'bg-orange-500/10', icon: Beaker },
+          { id: 'yimi', name: 'Yimi', role: 'Product Owner', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Layout },
+          { id: 'fani', name: 'Fani', role: 'Frontend Dev', color: 'text-pink-400', bg: 'bg-pink-500/10', icon: Code2 },
+          { id: 'cami', name: 'Cami', role: 'Backend Dev', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: Terminal },
+          { id: 'mani', name: 'Mani', role: 'QA Automation', color: 'text-red-400', bg: 'bg-red-500/10', icon: TestTube2 },
+          { id: 'romi', name: 'Romi', role: 'DevSecOps', color: 'text-violet-400', bg: 'bg-violet-500/10', icon: ShieldAlert },
+          { id: 'sefi', name: 'Sefi', role: 'Data Engineer', color: 'text-cyan-400', bg: 'bg-cyan-500/10', icon: Database },
+        ];
+        
+        function SwarmOrchestrator() {
+          const [inputText, setInputText] = useState('');
+          const [activeTab, setActiveTab] = useState('chat');
+          const [telemetry, setTelemetry] = useState(SWARM_AGENTS.reduce((acc, agent) => ({...acc, [agent.id]: 'idle'}), {}));
+          
+          const [journey, setJourney] = useState([
+            {
+              id: 1, type: 'gini_routing',
+              text: '¡Hola! Soy Gini V8.0, tu arquitecta y enrutadora principal. El Enjambre está en línea y todos los agentes se encuentran en Standby.\n\nIngresa tu requerimiento arquitectónico en la consola inferior para comenzar la orquestación paralela.'
+            }
+          ]);
+          
+          const isBusy = Object.values(telemetry).some(status => status !== 'idle' && status !== 'completed' && status !== 'waiting' && status !== 'error');
+        
+          const updateAgentStatus = (agentId, status) => {
+              setTelemetry(prev => ({...prev, [agentId]: status}));
+          };
+
+          const handleSend = async () => {
+            if(!inputText || isBusy) return;
+            const reqText = inputText;
+            setInputText('');
+            setJourney(prev => [...prev, { id: Date.now(), type: 'user', text: reqText }]);
+            
+            updateAgentStatus('gini', 'working');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: reqText})
+                });
+                const data = await response.json();
+                updateAgentStatus('gini', 'idle');
+
+                if(data.success) {
+                    if (data.is_direct_response) {
+                        setJourney(prev => [...prev, {
+                            id: Date.now()+1, type: 'gini_routing',
+                            text: data.direct_response
+                        }]);
+                    } else if (data.plan) {
+                        setJourney(prev => [...prev, {
+                            id: Date.now()+1, type: 'gini_routing',
+                            text: `Analizando requerimiento arquitectónico. Enrutando a: ${Object.keys(data.plan).join(', ')}...`
+                        }]);
+                
+                        Object.entries(data.plan).forEach(([agentName, prompt], i) => {
+                             const cardId = Date.now() + 10 + i;
+                             setJourney(prev => [...prev, {
+                                 id: cardId, type: 'action_card', agentId: agentName, status: 'processing', text: 'Sintetizando arquitectura...'
+                             }]);
+                             
+                             updateAgentStatus(agentName, 'processing');
+                
+                             fetch('/api/agent/generate', {
+                                 method: 'POST',
+                                 headers: {'Content-Type': 'application/json'},
+                                 body: JSON.stringify({agent_name: agentName, prompt: prompt})
+                             }).then(r => r.json()).then(res => {
+                                 updateAgentStatus(agentName, 'waiting');
+                                 if(res.success) {
+                                     setJourney(prev => prev.map(b => b.id === cardId ? {
+                                         ...b,
+                                         status: 'awaiting_approval',
+                                         reflection: res.plan_data.reflexion || 'Sin auto-reflexión.',
+                                         strategy: res.plan_data.explicacion || 'Archivos generados.',
+                                         code: (res.plan_data.archivos || []).map(a => `// ${a.nombre}\n${a.contenido}`).join('\n\n') || res.plan_data.comandos?.join('\n') || '',
+                                         plan_data: res.plan_data
+                                     } : b));
+                                 } else {
+                                     updateAgentStatus(agentName, 'error');
+                                 }
+                             });
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                updateAgentStatus('gini', 'error');
+            }
+          };
+
+          const handleApprove = async (blockId, agentId, planData) => {
+            setJourney(prev => prev.map(block => {
+              if (block.id === blockId) {
+                return { ...block, status: 'executing', terminalLogs: ['Iniciando inyección en máquina física y sandbox...'] };
+              }
+              return block;
+            }));
+            
+            updateAgentStatus(agentId, 'working');
+        
+            try {
+                const res = await fetch('/api/agent/execute', {
+                     method: 'POST',
+                     headers: {'Content-Type': 'application/json'},
+                     body: JSON.stringify({agent_name: agentId, plan_data: planData})
+                });
+                const data = await res.json();
+                
+                updateAgentStatus(agentId, 'completed');
+                setJourney(prev => prev.map(block => {
+                  if (block.id === blockId) {
+                    const currentLogs = block.terminalLogs || [];
+                    return { 
+                      ...block, 
+                      status: 'deployed', 
+                      terminalLogs: [...currentLogs, `[EXITO] Operación completada: ${JSON.stringify(data.results)}`] 
+                    };
+                  }
+                  return block;
+                }));
+            } catch(e) {
+                console.error(e);
+                updateAgentStatus(agentId, 'error');
+            }
+          };
+        
+          const handleReject = (blockId, agentId) => {
+            setJourney(prev => prev.map(block => {
+              if (block.id === blockId) {
+                return { ...block, status: 'rejected' };
+              }
+              return block;
+            }));
+            updateAgentStatus(agentId, 'idle');
+          };
+
+          return (
+            <div className="flex h-screen w-full bg-[#0B0F19] text-slate-300 font-sans overflow-hidden">
+              {/* PANEL IZQUIERDO */}
+              <aside className="w-64 bg-[#111827] border-r border-slate-800/60 flex flex-col z-20 shadow-xl">
+                <div className="p-5 border-b border-slate-800/60">
+                  <div className="flex items-center gap-3 text-white font-bold text-xl tracking-tight">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                      <Activity className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <span>Gini <span className="text-indigo-400 font-light">V8.0</span></span>
+                  </div>
+                </div>
+                
+                <div className="p-4">
+                  <button className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white py-2.5 px-4 rounded-md transition-all text-sm font-medium shadow-[0_0_15px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)]">
+                    <Plus className="w-4 h-4" /> Nuevo Hilo Operativo
+                  </button>
+                </div>
+              </aside>
+        
+              {/* PANEL CENTRAL */}
+              <main className="flex-1 flex flex-col bg-[#0B0F19] relative">
+                <header className="h-14 border-b border-slate-800/60 flex items-end px-6 bg-[#111827] z-10 gap-6">
+                  <button onClick={() => setActiveTab('chat')} className={`pb-3 px-2 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'chat' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                    <TerminalSquare className="w-4 h-4" /> Panel de Orquestación
+                  </button>
+                </header>
+        
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 scroll-smooth">
+                  {journey.map((block) => {
+                    if (block.type === 'user') {
+                      return (
+                        <div key={block.id} className="flex gap-4 justify-end">
+                          <div className="max-w-2xl bg-indigo-600/90 text-white p-4 rounded-2xl rounded-tr-sm shadow-md border border-indigo-500">
+                            <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{block.text}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (block.type === 'gini_routing') {
+                      const gini = SWARM_AGENTS.find(a => a.id === 'gini');
+                      return (
+                        <div key={block.id} className="flex gap-4 justify-start max-w-3xl">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-fuchsia-500/30 ${gini.bg} ${gini.color}`}>
+                            <GitMerge className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col pt-1">
+                            <span className="text-xs font-bold text-fuchsia-400 mb-1 flex items-center gap-1.5 uppercase tracking-wide">
+                              {gini.name} <span className="text-slate-500 font-normal">| {gini.role}</span>
+                            </span>
+                            <div className="text-sm text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800 border-l-2 border-l-fuchsia-500 shadow-sm whitespace-pre-wrap">
+                              {block.text}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    if (block.type === 'action_card') {
+                      const agent = SWARM_AGENTS.find(a => a.id === block.agentId) || SWARM_AGENTS[0];
+                      const Icon = agent.icon;
+                      const isProcessing = block.status === 'processing';
+                      const isExecuting = block.status === 'executing';
+                      const isDeployed = block.status === 'deployed';
+        
+                      return (
+                        <div key={block.id} className="flex gap-4 justify-start w-full">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 border border-slate-700 ${agent.bg} ${agent.color} relative`}>
+                            <Icon className={`w-5 h-5 ${isProcessing ? 'animate-pulse' : ''}`} />
+                            {isProcessing && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                                </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex-1 max-w-4xl flex flex-col">
+                            <span className={`text-xs font-bold mb-2 flex items-center gap-2 uppercase tracking-wide ${agent.color}`}>
+                              {agent.name} <span className="text-slate-500 font-normal">| {agent.role}</span>
+                              {isProcessing && <span className="text-[10px] bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full text-emerald-400 flex items-center gap-1.5"><Loader2 className="w-3 h-3 animate-spin"/> Sintetizando...</span>}
+                              {isDeployed && <span className="text-[10px] bg-indigo-500/10 border border-indigo-500/30 px-2 py-0.5 rounded-full text-indigo-400 flex items-center gap-1.5"><CheckSquare className="w-3 h-3"/> En Producción</span>}
+                            </span>
+        
+                            <div className="bg-[#111827] border border-slate-800/80 rounded-xl overflow-hidden shadow-lg flex flex-col transition-all duration-300">
+                              {isProcessing ? (
+                                <div className="p-6 flex flex-col gap-4">
+                                  <div className="flex items-center gap-3 text-slate-400 border-b border-slate-800 pb-4">
+                                    <Cpu className="w-5 h-5 animate-pulse text-emerald-500/70" />
+                                    <span className="text-sm font-medium">{block.text}</span>
+                                  </div>
+                                  <div className="space-y-3 mt-2">
+                                    <div className="h-4 bg-slate-800/50 rounded-md w-3/4 animate-pulse"></div>
+                                    <div className="h-4 bg-slate-800/50 rounded-md w-full animate-pulse delay-75"></div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="bg-amber-500/10 border-b border-amber-500/20 p-4 flex gap-3 items-start">
+                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                    <div>
+                                      <h4 className="text-xs font-bold text-amber-500 uppercase tracking-wider mb-1">Auto-Reflexión del Agente</h4>
+                                      <p className="text-sm text-amber-200/80 leading-relaxed whitespace-pre-wrap">{block.reflection}</p>
+                                    </div>
+                                  </div>
+        
+                                  <div className="p-5 border-b border-slate-800/80">
+                                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Estrategia</h4>
+                                    <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{block.strategy}</p>
+                                  </div>
+        
+                                  {block.code && (
+                                    <div className="p-4 bg-[#090C15] relative group">
+                                      <pre className="text-sm font-mono text-emerald-300 overflow-x-auto p-2">
+                                        <code>{block.code}</code>
+                                      </pre>
+                                    </div>
+                                  )}
+        
+                                  {block.status === 'awaiting_approval' && (
+                                    <div className="p-4 bg-indigo-900/10 border-t border-indigo-500/20 flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-xs text-indigo-300 font-medium">
+                                        <TerminalSquare className="w-4 h-4 animate-pulse" /> Esperando autorización humana...
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <button onClick={() => handleReject(block.id, agent.id)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-md text-sm font-medium transition-colors">
+                                          <X className="w-4 h-4" /> Rechazar
+                                        </button>
+                                        <button onClick={() => handleApprove(block.id, agent.id, block.plan_data)} className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+                                          <PlayCircle className="w-4 h-4" /> Aprobar e Inyectar
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  {block.status === 'rejected' && (
+                                    <div className="p-4 bg-red-900/10 border-t border-red-500/20 flex items-center justify-between">
+                                      <div className="flex items-center gap-2 text-xs text-red-400 font-medium">
+                                        <X className="w-4 h-4" /> Propuesta arquitectónica rechazada por el usuario.
+                                      </div>
+                                    </div>
+                                  )}
+                                  {(isExecuting || isDeployed) && (
+                                    <div className="p-4 bg-[#05080f] border-t border-slate-800">
+                                      <div className="font-mono text-xs space-y-1.5">
+                                        {block.terminalLogs?.map((log, i) => (
+                                          <div key={i} className="text-slate-300"><span className="text-slate-600 mr-2">{'>'}</span>{log}</div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
+        
+                <div className="p-6 border-t border-slate-800/80 bg-[#111827] shadow-[0_-10px_30px_rgba(0,0,0,0.2)] z-20">
+                  <div className="max-w-4xl mx-auto relative flex items-center bg-[#0B0F19] border border-slate-700/80 rounded-xl">
+                    <div className="pl-4 text-slate-500">
+                      <TerminalSquare className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      value={inputText}
+                      disabled={isBusy}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder={isBusy ? "El enjambre está operando. Por favor espera..." : "Ingresa un requerimiento arquitectónico..."}
+                      className="w-full bg-transparent border-none py-4 px-3 text-sm text-slate-200 focus:outline-none disabled:opacity-50"
+                    />
+                    <div className="pr-2">
+                      <button onClick={handleSend} disabled={isBusy || !inputText} className="p-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 rounded-lg text-white transition-colors">
+                        <Send className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </main>
+              
+              {/* PANEL DERECHO: Telemetría */}
+              <aside className="w-72 bg-[#111827] border-l border-slate-800/60 flex flex-col shadow-2xl z-20">
+                <div className="p-5 border-b border-slate-800/60 flex items-center justify-between">
+                  <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-indigo-500" />
+                    Telemetría
+                  </h3>
+                </div>
+        
+                <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                  {SWARM_AGENTS.map((agent) => {
+                    const status = telemetry[agent.id];
+                    return (
+                      <div key={agent.id} className="bg-[#0B0F19] border border-slate-800/80 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-2 h-2 rounded-full shadow-sm ${
+                              status === 'working' ? 'bg-emerald-500 animate-pulse' : 
+                              status === 'processing' ? 'bg-emerald-400 animate-ping' :
+                              status === 'waiting' ? 'bg-amber-500' : 
+                              status === 'error' ? 'bg-red-500' :
+                              status === 'completed' ? 'bg-indigo-500' :
+                              'bg-slate-600'
+                            }`} />
+                            <span className="text-sm font-semibold text-slate-200">{agent.name}</span>
+                          </div>
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm border ${agent.color.replace('text', 'border').replace('400', '500/30').replace('500', '500/30')} ${agent.bg} ${agent.color}`}>
+                            {agent.role}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-2 font-medium">
+                          {status === 'processing' && <span className="text-emerald-400"><Cpu className="w-3 h-3 inline animate-pulse"/> Pensando...</span>}
+                          {status === 'working' && <span className="text-emerald-400"><Activity className="w-3 h-3 inline"/> Trabajando...</span>}
+                          {status === 'waiting' && <span className="text-amber-400"><Clock className="w-3 h-3 inline"/> Esperando</span>}
+                          {status === 'error' && <span className="text-red-400"><AlertTriangle className="w-3 h-3 inline"/> Fallo</span>}
+                          {status === 'completed' && <span className="text-indigo-400"><Check className="w-3 h-3 inline"/> Terminado</span>}
+                          {status === 'idle' && <span className="text-slate-500"><Code2 className="w-3 h-3 inline"/> Standby</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </aside>
+            </div>
+          );
+        }
+        
+        const root = createRoot(document.getElementById('root'));
+        root.render(<SwarmOrchestrator />);
+    </script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>
