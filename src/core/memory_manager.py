@@ -41,5 +41,24 @@ class MemoryManager:
             return "... [Contenido truncado] ...\n" + content[-max_chars:]
         return content
 
+    def search_knowledge_base(self, query: str, limit: int = 3) -> str:
+        """Herramienta activa: Busca semánticamente en Qdrant y formatea el resultado."""
+        try:
+            from src.memory.vector_db import VectorDB
+            db = VectorDB()
+            results = db.search(query, limit=limit)
+            
+            if not results:
+                return "No se encontró información relevante en la base de conocimientos."
+                
+            formatted = "--- RESULTADOS DE LA BASE DE CONOCIMIENTO (RAG) ---\n"
+            for i, res in enumerate(results):
+                src = res.get('source', 'Desconocido')
+                text = res.get('text', '')
+                formatted += f"[{i+1}] Origen: {src}\nContenido: {text}\n\n"
+            return formatted
+        except Exception as e:
+            return f"Error consultando la base vectorial: {str(e)}"
+
 # Instancia global
 memory = MemoryManager()

@@ -34,7 +34,7 @@ class UniversalAgent:
 
         system_instruction = self.load_prompt()
         
-        auto_qa_rule = "\n\nCRÍTICO: Antes de entregar la etiqueta <explicacion> o <archivo>, DEBES generar obligatoriamente la etiqueta <reflexion> criticando tu propia lógica para asegurar máxima calidad corporativa."
+        auto_qa_rule = "\n\nCRÍTICO: Antes de entregar la etiqueta <explicacion> o <archivo>, DEBES generar obligatoriamente la etiqueta <reflexion> criticando tu propia lógica para asegurar máxima calidad corporativa.\nSi necesitas consultar la memoria vectorial, utiliza <buscar_rag>termino</buscar_rag>.\nSi necesitas información de la web, utiliza <buscar_web>termino</buscar_web>.\nSi necesitas probar lógica en Python de forma segura, utiliza <ejecutar_codigo>tu script python</ejecutar_codigo>.\nEl sistema pausará, ejecutará la herramienta y te devolverá el resultado."
 
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
@@ -45,9 +45,41 @@ class UniversalAgent:
         full_prompt = f"CONTEXTO DE MEMORIA:\n{context}\n\nREQUERIMIENTO ACTUAL:\n{user_prompt}"
         
         try:
-            response = model.generate_content(full_prompt)
-            raw = response.text
             import re
+            raw = ""
+            
+            # Ciclo ReAct (Razonamiento y Acción) - Máximo 3 iteraciones para RAG
+            for _ in range(3):
+                response = model.generate_content(full_prompt)
+                raw = response.text
+                
+                rag_match = re.search(r'<buscar_rag>(.*?)</buscar_rag>', raw, re.DOTALL)
+                web_match = re.search(r'<buscar_web>(.*?)</buscar_web>', raw, re.DOTALL)
+                code_match = re.search(r'<ejecutar_codigo>(.*?)</ejecutar_codigo>', raw, re.DOTALL)
+                
+                if rag_match:
+                    termino = rag_match.group(1).strip()
+                    rag_results = memory.search_knowledge_base(termino)
+                    full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Resultado RAG): {rag_results}\n\nPor favor, continúa."
+                    continue
+                elif web_match:
+                    from src.skills.secure_tools import ProfessionalWebSearch
+                    termino = web_match.group(1).strip()
+                    web_results = ProfessionalWebSearch.search(termino)
+                    full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Resultado Web): {web_results}\n\nPor favor, continúa."
+                    continue
+                elif code_match:
+                    from src.skills.secure_tools import SecureExecutionSandbox
+                    codigo = code_match.group(1).strip()
+                    if codigo.startswith("```"):
+                        codigo = codigo.split("\n", 1)[-1]
+                    if codigo.endswith("```"):
+                        codigo = codigo.rsplit("\n", 1)[0]
+                    exec_results = SecureExecutionSandbox.run_python_code(codigo.strip())
+                    full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Salida Sandbox):\n{exec_results}\n\nPor favor, continúa iterando."
+                    continue
+                else:
+                    break
             
             data = {"archivos": [], "comandos": []}
             
