@@ -1,4 +1,4 @@
-# Manual de Arquitectura y Gestión DevSecOps (Celsia)
+# Manual de Arquitectura y Gestión DevSecOps
 
 ## Índice de Contenidos
 - [1. Introducción y Visión](#1-introducción-y-visión)
