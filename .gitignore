@@ -17,3 +17,4 @@ __pycache__/
 # Directorio de espacio de trabajo de los agentes
 workspace/
 simulate_v8.py
+*.log

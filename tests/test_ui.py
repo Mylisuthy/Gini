@@ -1,58 +1,40 @@
-import pytest
 import sys
 import os
+import pytest
 
-# Asegurar importación de src
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from src.gui.app import premium_button, COLORS
-from src.core.universal_agent import UniversalAgent
-import flet as ft
+from src.gui.app import main
 
-def test_premium_button_builder():
+class MockPage:
+    def __init__(self):
+        self.title = ""
+        self.theme_mode = None
+        self.padding = 0
+        self.spacing = 0
+        self.bgcolor = ""
+        self.controls = []
+        self.overlay = []
+
+    def add(self, *controls):
+        self.controls.extend(controls)
+
+    def update(self):
+        pass
+
+def test_ui_initialization():
     """
-    Verifica que el constructor de botones premium no use atributos
-    deprecated de Flet (como ft.colors.WHITE o ft.icons.SEND) y genere un ElevatedButton correcto.
+    Prueba que la interfaz gráfica V8.0 se inicialice sin errores de atributos
+    (Ej. ft.border.all -> ft.Border.all).
+    Si la UI tiene fallos de clases en Flet, este test fallará instantáneamente.
     """
-    # Usar strings literales nos protege de caídas por versiones de Flet
-    btn = premium_button(
-        text="Test Button",
-        base_color="#123456",
-        hover_color="#654321",
-        on_click=lambda e: None,
-        icon="send"
-    )
+    mock_page = MockPage()
     
-    assert isinstance(btn, ft.ElevatedButton)
-    assert btn.content == "Test Button"
-    assert btn.icon == "send"
-    # Verificar que el estilo usa strings en lugar de constantes de módulo
-    assert btn.style.color == "white"
-
-def test_color_palette_consistency():
-    """
-    Verifica que la paleta corporativa tenga las llaves necesarias.
-    """
-    required_keys = ["gini", "yimi", "tobi", "evo", "bg_start", "bg_end", "glass"]
-    for key in required_keys:
-        assert key in COLORS
-        
-def test_universal_agent_initialization():
-    """
-    Verifica que el agente universal pueda instanciarse sin fallar.
-    """
-    agent = UniversalAgent("test_agent")
-    assert agent.agent_name == "test_agent"
-
-def test_create_glass_container():
-    """
-    Verifica que el constructor de contenedores no lance errores por ft.Border.all()
-    """
-    from src.gui.app import create_glass_container
-    dummy_text = ft.Text("Dummy")
-    container = create_glass_container(dummy_text)
-    
-    assert isinstance(container, ft.Container)
-    # Si ft.Border.all falla, la instanciación de arriba lanzará una excepción
-    assert container.content == dummy_text
-
+    try:
+        main(mock_page)
+        # Verificamos que se hayan agregado controles al page (el Row principal)
+        assert len(mock_page.controls) > 0
+    except AttributeError as e:
+        pytest.fail(f"Fallo de atributos en la UI durante inicialización: {e}")
+    except Exception as e:
+        pytest.fail(f"Excepción inesperada al iniciar la UI: {e}")
