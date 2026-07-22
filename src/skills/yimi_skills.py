@@ -7,6 +7,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 from dotenv import load_dotenv
 
+from src.core.state_manager import GlobalStateManager
+
 # Cargar variables de entorno desde la raíz del proyecto
 load_dotenv()
 
@@ -103,7 +105,26 @@ def crear_tarea(titulo: str, descripcion: str, actividad: str, horas_estimadas: 
 def execute_skills(data: dict) -> list:
     log = []
     azure_backlog = data.get("azure_backlog")
-    if azure_backlog and "iniciativa" in azure_backlog:
+    
+    if not azure_backlog:
+        return log
+        
+    epic_id = azure_backlog.get("epic_id")
+    
+    # 1. Registrar en el Blackboard (Local State Manager)
+    if epic_id:
+        try:
+            state_manager = GlobalStateManager()
+            success = state_manager.update_epic_with_breakdown(epic_id, azure_backlog)
+            if success:
+                log.append(f"Blackboard actualizado: Epic {epic_id} transicionado a READY_FOR_DEV con su desglose.")
+            else:
+                log.append(f"Aviso: No se pudo actualizar el Epic {epic_id} en el Blackboard (no encontrado o corrupto).")
+        except Exception as e:
+            log.append(f"Error interno al escribir en el Blackboard: {str(e)}")
+
+    # 2. Modo Espejo: Registrar en Azure DevOps
+    if "iniciativa" in azure_backlog:
         try:
             ini = azure_backlog["iniciativa"]
             ini_id, res_ini = crear_iniciativa(

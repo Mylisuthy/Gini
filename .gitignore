@@ -20,3 +20,10 @@ simulate_v8.py
 *.log
 
 eliminar/
+
+# Gini Unify Architecture State
+backlog_state.json
+src/memory/qdrant_storage/
+src/memory/*.md
+*.sqlite
+.lock

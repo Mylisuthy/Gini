@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import uuid
 import tempfile
@@ -12,46 +13,79 @@ class SecureExecutionSandbox:
     """
     @staticmethod
     def run_python_code(code: str, timeout: int = 15) -> str:
-        # Verificamos si Docker está instalado
+        # 1. Intentamos usar Docker si está instalado
+        has_docker = False
         try:
             subprocess.run(["docker", "--version"], check=True, capture_output=True)
+            has_docker = True
         except Exception:
-            return "Error: Docker no está instalado o en ejecución. El Sandbox de seguridad corporativa lo requiere estrictamente."
+            has_docker = False
 
-        # Creamos un archivo temporal para el script
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write(code)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+            # Si no hay Docker, inyectamos un parche de seguridad al inicio del script
+            if not has_docker:
+                safety_patch = '''
+import sys
+import os
+# Bloqueo básico de módulos peligrosos en fallback local
+for mod in ['subprocess', 'shutil', 'socket']:
+    sys.modules[mod] = None
+'''
+                f.write(safety_patch + "\n" + code)
+            else:
+                f.write(code)
             script_path = f.name
             
         filename = os.path.basename(script_path)
-        container_name = f"gini_sandbox_{uuid.uuid4().hex[:8]}"
         
-        # Ejecutamos el contenedor efímero aislando red y recursos
-        docker_cmd = [
-            "docker", "run", "--rm", "--name", container_name,
-            "--memory=128m", "--cpus=0.5", "--network=none", # Seguridad máxima: sin red
-            "-v", f"{script_path}:/app/{filename}:ro", # Solo lectura
-            "-w", "/app",
-            "python:3.11-slim",
-            "python", filename
-        ]
-        
-        try:
-            result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)
-            os.remove(script_path)
-            
-            if result.returncode == 0:
-                return f"[EXITO]\n{result.stdout.strip()}"
-            else:
-                return f"[ERROR]\n{result.stderr.strip()}"
-        except subprocess.TimeoutExpired:
-            subprocess.run(["docker", "kill", container_name], capture_output=True)
-            os.remove(script_path)
-            return "[ERROR] Tiempo de ejecución excedido (Timeout de seguridad de 15s)."
-        except Exception as e:
-            if os.path.exists(script_path):
+        if has_docker:
+            container_name = f"gini_sandbox_{uuid.uuid4().hex[:8]}"
+            docker_cmd = [
+                "docker", "run", "--rm", "--name", container_name,
+                "--memory=128m", "--cpus=0.5", "--network=none",
+                "-v", f"{script_path}:/app/{filename}:ro",
+                "-w", "/app",
+                "python:3.11-slim",
+                "python", filename
+            ]
+            try:
+                result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=timeout)
                 os.remove(script_path)
-            return f"[ERROR] Falló la infraestructura del Sandbox: {str(e)}"
+                
+                if result.returncode == 0:
+                    return f"[EXITO (Docker Sandbox)]\n{result.stdout.strip()}"
+                else:
+                    return f"[ERROR (Docker Sandbox)]\n{result.stderr.strip()}"
+            except subprocess.TimeoutExpired:
+                subprocess.run(["docker", "kill", container_name], capture_output=True)
+                os.remove(script_path)
+                return "[ERROR] Tiempo de ejecución excedido en Docker (Timeout 15s)."
+            except Exception as e:
+                if os.path.exists(script_path):
+                    os.remove(script_path)
+                return f"[ERROR] Falló la infraestructura Docker: {str(e)}"
+        else:
+            # Fallback Local Restringido
+            # Limpiamos variables de entorno críticas
+            safe_env = os.environ.copy()
+            for key in ["GEMINI_API_KEY", "AZURE_DEVOPS_PAT", "TAVILY_API_KEY"]:
+                safe_env.pop(key, None)
+                
+            try:
+                result = subprocess.run([sys.executable, script_path], capture_output=True, text=True, timeout=timeout, env=safe_env)
+                os.remove(script_path)
+                
+                if result.returncode == 0:
+                    return f"[EXITO (Local Restricted)]\n{result.stdout.strip()}"
+                else:
+                    return f"[ERROR (Local Restricted)]\n{result.stderr.strip()}"
+            except subprocess.TimeoutExpired:
+                os.remove(script_path)
+                return "[ERROR] Tiempo de ejecución excedido en Sandbox Local (Timeout 15s)."
+            except Exception as e:
+                if os.path.exists(script_path):
+                    os.remove(script_path)
+                return f"[ERROR] Falló el Sandbox Local: {str(e)}"
 
 
 class ProfessionalWebSearch:

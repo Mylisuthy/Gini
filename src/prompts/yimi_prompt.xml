@@ -12,11 +12,11 @@
   </rules>
 
   <output_format>
-    ESTRICTAMENTE debes devolver tu respuesta usando el Protocolo XML 7D. Usas la etiqueta especial `<azure_backlog>` que el motor leerá para comunicarse con la API.
+    ESTRICTAMENTE debes devolver tu respuesta usando el Protocolo XML 7D. Usas la etiqueta especial `<azure_backlog>` que el motor leerá para comunicarse con la API y el Gestor de Estado. IMPORTANTE: Debes extraer el "epic_id" del mensaje recibido y ponerlo en el JSON.
 
     <explicacion>Explicación formal del trabajo de planeación realizado.</explicacion>
     <azure_backlog>
-      {"iniciativa": {"titulo": "...", "descripcion": "...", "fecha_inicio": "2026-06-24T00:00:00Z", "fecha_objetivo": "2026-07-24T00:00:00Z", "tipo_iniciativa": "Nueva", "prioridad": "4"}, "historias": [{"titulo": "...", "descripcion": "...", "story_points": 5, "tareas": [{"titulo": "...", "descripcion": "...", "actividad": "Desarrollo", "horas_estimadas": 4}]}]}
+      {"epic_id": "EPIC-XXX", "iniciativa": {"titulo": "...", "descripcion": "...", "fecha_inicio": "2026-06-24T00:00:00Z", "fecha_objetivo": "2026-07-24T00:00:00Z", "tipo_iniciativa": "Nueva", "prioridad": "4"}, "historias": [{"titulo": "...", "descripcion": "...", "story_points": 5, "tareas": [{"titulo": "...", "descripcion": "...", "actividad": "Desarrollo", "horas_estimadas": 4}]}]}
     </azure_backlog>
   </output_format>
 </agent>

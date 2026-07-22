@@ -103,7 +103,7 @@ class IngestionPipeline:
         if not os.path.exists(directory_path):
             raise ValueError(f"El directorio {directory_path} no existe.")
             
-        print(f"🚀 Iniciando ingesta masiva desde: {directory_path}")
+        print(f"Iniciando ingesta masiva desde: {directory_path}")
         
         all_documents = []
         all_metadatas = []
@@ -120,8 +120,8 @@ class IngestionPipeline:
                     
         # Inyectar en Qdrant usando batch (VectorDB Fase 1)
         if all_documents:
-            print(f"🧠 Inyectando {len(all_documents)} vectores semánticos a Qdrant...")
+            print(f"Inyectando {len(all_documents)} vectores semánticos a Qdrant...")
             self.db.insert_documents(all_documents, all_metadatas)
-            print("✅ Ingesta masiva completada exitosamente.")
+            print("Ingesta masiva completada exitosamente.")
         else:
-            print("⚠️ No se encontraron documentos válidos para ingestar.")
+            print("No se encontraron documentos válidos para ingestar.")

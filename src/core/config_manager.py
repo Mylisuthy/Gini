@@ -41,13 +41,13 @@ class ConfigManager:
         with open(self.config_file, 'wb') as f:
             f.write(encrypted_data)
 
-    def get(self, key: str) -> str:
+    def get(self, key: str, default: str = "") -> str:
         # Priorizar el vault encriptado
         secure_data = self._read_encrypted()
         if key in secure_data:
             return secure_data[key]
         # Fallback a variable de entorno estándar
-        return os.environ.get(key, "")
+        return os.environ.get(key, default)
 
     def set(self, key: str, value: str):
         secure_data = self._read_encrypted()

@@ -4,18 +4,24 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams, PointStruct
 from src.memory.embeddings import EmbedderFactory
 
+_qdrant_client_instance = None
+
 class VectorDB:
     def __init__(self, collection_name: str = "gini_knowledge_base"):
+        global _qdrant_client_instance
         self.collection_name = collection_name
         
         # Instancia del Embedder Dinámico (Gemini o Local según config)
         self.embedder = EmbedderFactory.get_embedder()
         
-        # Para el entorno masivo y local sin levantar Docker de inmediato,
-        # usamos una base de datos Qdrant persistida en archivo.
-        qdrant_path = os.path.join(os.path.dirname(__file__), 'qdrant_storage')
-        os.makedirs(qdrant_path, exist_ok=True)
-        self.client = QdrantClient(path=qdrant_path)
+        if _qdrant_client_instance is None:
+            # Para el entorno masivo y local sin levantar Docker de inmediato,
+            # usamos una base de datos Qdrant persistida en archivo.
+            qdrant_path = os.path.join(os.path.dirname(__file__), 'qdrant_storage')
+            os.makedirs(qdrant_path, exist_ok=True)
+            _qdrant_client_instance = QdrantClient(path=qdrant_path)
+            
+        self.client = _qdrant_client_instance
         
         self._ensure_collection()
 
@@ -61,10 +67,10 @@ class VectorDB:
         """Busca los fragmentos más relevantes y retorna su metadata/texto."""
         query_vector = self.embedder.embed_query(query)
         
-        search_result = self.client.search(
+        search_result = self.client.query_points(
             collection_name=self.collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=limit
         )
         
-        return [hit.payload for hit in search_result]
+        return [hit.payload for hit in search_result.points]

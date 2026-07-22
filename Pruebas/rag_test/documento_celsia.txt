@@ -1,0 +1,3 @@
+Este es un documento de prueba sobre las directrices de Celsia.
+El código del protocolo principal es Omega-7.
+Solo el personal autorizado puede reiniciar el núcleo central.

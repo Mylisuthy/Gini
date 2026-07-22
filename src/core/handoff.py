@@ -1,69 +1,61 @@
 import json
-from datetime import datetime
-from typing import Dict, Any, List
+from src.core.state_manager import GlobalStateManager
 
-class HandoffProtocol:
+class HandoffManager:
     """
-    Maneja el protocolo de intercambio de contexto (Handoff) entre los agentes.
-    Asegura que la información fluya sin pérdida de contexto.
+    Gestiona las transferencias laterales (Peer-to-Peer) entre los Líderes Técnicos
+    y el Blackboard, eliminando la dependencia de Gini como orquestador central.
     """
+    def __init__(self):
+        self.state_manager = GlobalStateManager()
 
-    @staticmethod
-    def create_initial_package(source: str, target: str, original_prompt: str) -> Dict[str, Any]:
-        """Crea el sobre inicial generado por Gini."""
-        return {
-            "metadata": {
-                "id": f"task_{datetime.now().strftime('%Y%m%d%H%M%S')}",
-                "created_at": datetime.now().isoformat(),
-                "status": "in_progress",
-                "current_assignee": target
-            },
-            "context": {
-                "original_prompt": original_prompt,
-                "history": [
-                    {
-                        "agent": source,
-                        "action": "routed_task",
-                        "timestamp": datetime.now().isoformat(),
-                        "notes": f"Enrutado a {target}"
-                    }
-                ]
-            },
-            "deliverables": {
-                "yimi_plan": None,
-                "cami_backend": None,
-                "fani_frontend": None,
-                "mani_qa_report": None
-            }
-        }
+    def claim_epic(self, epic_id: str, leader_name: str) -> bool:
+        """
+        Un líder reclama un Epic que estaba en READY_FOR_DEV, pasándolo a IN_PROGRESS.
+        """
+        success = self.state_manager.update_epic_state(epic_id, "IN_PROGRESS")
+        if success:
+            print(f"[{leader_name.upper()}] ha reclamado el EPIC {epic_id}. Estado -> IN_PROGRESS")
+        return success
 
-    @staticmethod
-    def pass_baton(package: Dict[str, Any], current_agent: str, next_agent: str, deliverable_key: str, deliverable_data: Any, notes: str = "") -> Dict[str, Any]:
+    def handoff_to_qa(self, epic_id: str, leader_name: str) -> bool:
         """
-        Pasa el paquete al siguiente agente, actualizando el estado y guardando los entregables.
+        El líder de Dev finaliza y transfiere el Epic a QA.
         """
-        # 1. Guardar entregable
-        if deliverable_key in package["deliverables"]:
-            package["deliverables"][deliverable_key] = deliverable_data
-        
-        # 2. Actualizar el rastro de auditoría
-        package["context"]["history"].append({
-            "agent": current_agent,
-            "action": "completed_task_and_handed_off",
-            "timestamp": datetime.now().isoformat(),
-            "notes": notes
-        })
-        
-        # 3. Cambiar asignación
-        if next_agent.lower() == "done":
-            package["metadata"]["status"] = "completed"
-            package["metadata"]["current_assignee"] = "None"
-        else:
-            package["metadata"]["current_assignee"] = next_agent
+        success = self.state_manager.update_epic_state(epic_id, "READY_FOR_QA")
+        if success:
+            print(f"[{leader_name.upper()}] ha finalizado el desarrollo del EPIC {epic_id}. Estado -> READY_FOR_QA")
+        return success
+
+    def reject_from_qa(self, epic_id: str, qa_name: str, reason: str) -> bool:
+        """
+        QA rechaza el Epic y lo devuelve a IN_PROGRESS.
+        """
+        success = self.state_manager.update_epic_state(epic_id, "REJECTED_BY_QA")
+        if success:
+            print(f"[{qa_name.upper()}] ha RECHAZADO el EPIC {epic_id} por: {reason}. Estado -> REJECTED_BY_QA")
+        return success
+
+    def approve_from_qa(self, epic_id: str, qa_name: str) -> bool:
+        """
+        QA aprueba el Epic y lo marca como DONE.
+        """
+        success = self.state_manager.update_epic_state(epic_id, "DONE")
+        if success:
+            print(f"[{qa_name.upper()}] ha APROBADO el EPIC {epic_id}. Estado -> DONE")
+        return success
+
+    def check_pending_work(self, leader_role: str) -> list:
+        """
+        Un líder consulta el Blackboard para saber si hay trabajo pendiente para su rol.
+        - Dev Leaders (Cami/Fani) buscan READY_FOR_DEV o REJECTED_BY_QA.
+        - QA Leaders (Mani) buscan READY_FOR_QA.
+        """
+        pending = []
+        if leader_role.lower() in ['cami', 'fani', 'dev']:
+            pending.extend(self.state_manager.get_epics_by_state("READY_FOR_DEV"))
+            pending.extend(self.state_manager.get_epics_by_state("REJECTED_BY_QA"))
+        elif leader_role.lower() in ['mani', 'qa', 'tester']:
+            pending.extend(self.state_manager.get_epics_by_state("READY_FOR_QA"))
             
-        return package
-
-    @staticmethod
-    def render_package(package: Dict[str, Any]) -> str:
-        """Renderiza el paquete a JSON estricto."""
-        return json.dumps(package, indent=2, ensure_ascii=False)
+        return pending

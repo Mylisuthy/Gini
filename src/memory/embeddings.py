@@ -25,7 +25,7 @@ class GeminiEmbedder(BaseEmbedder):
         if not api_key:
             raise ValueError("GEMINI_API_KEY no encontrada para usar Embeddings de Google.")
         genai.configure(api_key=api_key)
-        self.model_name = "models/text-embedding-004"
+        self.model_name = "models/gemini-embedding-001"
         
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         import google.generativeai as genai
@@ -47,7 +47,7 @@ class GeminiEmbedder(BaseEmbedder):
         
     @property
     def vector_size(self) -> int:
-        return 768  # Tamaño estándar del embedding de Gemini-004
+        return 3072
 
 class LocalEmbedder(BaseEmbedder):
     def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2"):

@@ -34,7 +34,7 @@ class UniversalAgent:
 
         system_instruction = self.load_prompt()
         
-        auto_qa_rule = "\n\nCRÍTICO: Antes de entregar la etiqueta <explicacion> o <archivo>, DEBES generar obligatoriamente la etiqueta <reflexion> criticando tu propia lógica para asegurar máxima calidad corporativa.\nSi necesitas consultar la memoria vectorial, utiliza <buscar_rag>termino</buscar_rag>.\nSi necesitas información de la web, utiliza <buscar_web>termino</buscar_web>.\nSi necesitas probar lógica en Python de forma segura, utiliza <ejecutar_codigo>tu script python</ejecutar_codigo>.\nEl sistema pausará, ejecutará la herramienta y te devolverá el resultado."
+        auto_qa_rule = "\n\nCRÍTICO: Antes de entregar la etiqueta <explicacion> o <archivo>, DEBES generar obligatoriamente la etiqueta <reflexion> criticando tu propia lógica para asegurar máxima calidad corporativa.\nSi necesitas consultar la memoria vectorial, utiliza <buscar_rag>termino</buscar_rag>.\nSi necesitas información de la web, utiliza <buscar_web>termino</buscar_web>.\nSi necesitas probar lógica en Python de forma segura, utiliza <ejecutar_codigo>tu script python</ejecutar_codigo>.\nSi necesitas delegar trabajo a micro-agentes, usa <crear_enjambre>[{\"rol\": \"Micro-Dev\", \"tarea\": \"...\"}]</crear_enjambre> en formato JSON.\nEl sistema pausará, ejecutará la herramienta y te devolverá el resultado para que continúes."
 
         model = genai.GenerativeModel(
             model_name="gemini-2.5-flash",
@@ -48,16 +48,28 @@ class UniversalAgent:
             import re
             raw = ""
             
-            # Ciclo ReAct (Razonamiento y Acción) - Máximo 3 iteraciones para RAG
-            for _ in range(3):
+            # Ciclo ReAct (Razonamiento y Acción) - Máximo 4 iteraciones para RAG y Enjambres
+            for _ in range(4):
                 response = model.generate_content(full_prompt)
                 raw = response.text
                 
                 rag_match = re.search(r'<buscar_rag>(.*?)</buscar_rag>', raw, re.DOTALL)
                 web_match = re.search(r'<buscar_web>(.*?)</buscar_web>', raw, re.DOTALL)
                 code_match = re.search(r'<ejecutar_codigo>(.*?)</ejecutar_codigo>', raw, re.DOTALL)
+                swarm_match = re.search(r'<crear_enjambre>(.*?)</crear_enjambre>', raw, re.DOTALL)
                 
-                if rag_match:
+                if swarm_match:
+                    from src.core.swarm_factory import SwarmFactory
+                    try:
+                        import json
+                        micro_agents_list = json.loads(swarm_match.group(1).strip())
+                        factory = SwarmFactory()
+                        swarm_results = factory.execute_swarm(micro_agents_list, full_prompt)
+                        full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Resultado del Enjambre):\n{swarm_results}\n\nPor favor, consolida la solución y genera los archivos finales necesarios."
+                    except Exception as e:
+                        full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Error en Enjambre):\n{str(e)}\n\nCorrige el formato JSON o el error."
+                    continue
+                elif rag_match:
                     termino = rag_match.group(1).strip()
                     rag_results = memory.search_knowledge_base(termino)
                     full_prompt += f"\n\nAsistente (Tú): {raw}\n\nSistema (Resultado RAG): {rag_results}\n\nPor favor, continúa."
@@ -122,7 +134,11 @@ class UniversalAgent:
                 except:
                     pass
                     
-            if not data["archivos"] and not data["comandos"] and "explicacion" not in data:
+            ing_match = re.search(r'<ingestar_conocimiento path="([^"]+)">', raw)
+            if ing_match:
+                data["ingestar_conocimiento"] = ing_match.group(1).strip()
+                    
+            if not data["archivos"] and not data["comandos"] and "explicacion" not in data and "ingestar_conocimiento" not in data:
                 escaped_raw = raw.replace("<", "&lt;").replace(">", "&gt;")
                 data["explicacion"] = "Respuesta parseada: " + escaped_raw
                 
